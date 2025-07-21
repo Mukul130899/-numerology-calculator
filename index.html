@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>All-in-One Numerology Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #23243a; color: #fff; padding: 0; margin: 0;}
+    .container { max-width: 480px; margin: 40px auto; background: #292c44; padding: 2rem 1.2rem 2rem 1.2rem; border-radius: 18px; box-shadow: 0 6px 18px #0006; }
+    h1 { text-align: center; font-size: 2rem; margin-bottom: 1.2rem; letter-spacing: 1px;}
+    form { display: flex; flex-direction: column; gap: 16px; margin-bottom: 1.6rem;}
+    label { font-weight: 600;}
+    input, button { font-size: 1.1rem; padding: 0.7em 1em; border-radius: 8px; border: none; margin-top: 5px;}
+    input { background: #363a5a; color: #fff;}
+    button { background: #ffe262; color: #292c44; font-weight: bold; cursor: pointer; box-shadow: 0 2px 10px #fff2; }
+    button:hover { background: #fff8a5;}
+    .results { background: #1a1e33; border-radius: 14px; padding: 1.2rem; box-shadow: 0 1px 8px #0004; margin-top: 1rem;}
+    .result-card { margin-bottom: 1.3rem;}
+    .result-card:last-child { margin-bottom: 0;}
+    .result-title { font-size: 1.13rem; font-weight: 600; color: #ffe262;}
+    .result-number { font-size: 1.6rem; font-weight: bold; margin-bottom: 6px;}
+    .lucky-section { margin: 2rem 0 0 0; background: #1f2240; border-radius: 12px; padding: 1rem 1rem 1.2rem 1rem; }
+    .lucky-title { font-size: 1.17rem; color: #73ffe7; font-weight: bold; margin-bottom: 8px;}
+    .lucky-list { line-height: 1.7; font-size: 1.05rem;}
+    .conclusion { margin-top: 2rem; background: #25294d; border-radius: 12px; padding: 1rem; box-shadow: 0 0 8px #0003;}
+    .conclusion-title { font-size: 1.12rem; color: #ffe262; font-weight: 700; margin-bottom: 8px;}
+    .conclusion-text { font-size: 1.03rem; }
+    @media (max-width:600px) {
+      .container { padding: 1rem; margin: 0.6rem;}
+      h1 { font-size: 1.25rem;}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>All-in-One Numerology Calculator</h1>
+    <form id="numerologyForm" autocomplete="off">
+      <label for="fullname">Full Name (as per Birth Certificate):</label>
+      <input type="text" id="fullname" required placeholder="Enter your full name">
+      <label for="dob">Date of Birth:</label>
+      <input type="date" id="dob" required>
+      <button type="submit">Calculate</button>
+    </form>
+    <div id="results" class="results" style="display:none"></div>
+  </div>
+  <script>
+    const numerologyTable = {
+      A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,I:9,
+      J:1,K:2,L:3,M:4,N:5,O:6,P:7,Q:8,R:9,
+      S:1,T:2,U:3,V:4,W:5,X:6,Y:7,Z:8
+    };
+    const luckyDetails = {
+      1: { color: "Red, Gold, Orange", number: "1, 10, 19, 28", field: "Leadership, Politics, Business Owner", day: "Sunday, Monday", work: "Initiate new projects, self-promotion" },
+      2: { color: "White, Cream, Green", number: "2, 11, 20, 29", field: "Consulting, PR, Art, Design", day: "Monday, Friday", work: "Teamwork, negotiation, partnership" },
+      3: { color: "Yellow, Violet, Mauve", number: "3, 12, 21, 30", field: "Media, Entertainment, Teaching", day: "Thursday", work: "Creativity, socializing, presentations" },
+      4: { color: "Blue, Gray, Black", number: "4, 13, 22, 31", field: "Engineering, Law, Planning", day: "Saturday, Sunday", work: "Planning, discipline, system setup" },
+      5: { color: "Light Green, Silver, Aqua", number: "5, 14, 23", field: "Travel, Marketing, Sales", day: "Wednesday, Friday", work: "Travel, negotiation, communication" },
+      6: { color: "Pink, Blue, White", number: "6, 15, 24", field: "Hospitality, Education, Art", day: "Friday, Tuesday", work: "Home, family, creative tasks" },
+      7: { color: "Purple, Sea Green, Gray", number: "7, 16, 25", field: "Research, Science, Counseling", day: "Monday, Thursday", work: "Learning, meditation, research" },
+      8: { color: "Dark Blue, Black, Gray", number: "8, 17, 26", field: "Business, Finance, Management", day: "Saturday, Sunday", work: "Financial, legal, big decisions" },
+      9: { color: "Red, Maroon, Gold", number: "9, 18, 27", field: "Charity, Military, NGO", day: "Tuesday, Friday", work: "Helping others, leadership, healing" },
+      11: { color: "Silver, Light Blue, White", number: "11, 2, 29", field: "Spirituality, Healing, Arts", day: "Monday, Thursday", work: "Creative, healing, guidance" },
+      22: { color: "Gold, Blue, White", number: "22, 4, 31", field: "Engineering, Innovation, Management", day: "Saturday, Sunday", work: "Building, project planning" },
+      33: { color: "Pink, Gold, Silver", number: "33, 6, 24", field: "Teaching, Healing, Social Work", day: "Friday, Monday", work: "Service, teaching, nurturing" }
+    };
+
+    function reduce(num) {
+      while (num > 9 && num !== 11 && num !== 22 && num !== 33) {
+        num = num.toString().split('').reduce((a, c) => a + Number(c), 0);
+      }
+      return num;
+    }
+    function getNumberFromName(name, filterType = "all") {
+      let letters = name.toUpperCase().replace(/[^A-Z]/g, '').split('');
+      if (filterType === "vowel") letters = letters.filter(c => 'AEIOU'.includes(c));
+      if (filterType === "consonant") letters = letters.filter(c => !'AEIOU'.includes(c));
+      let total = letters.reduce((a, c) => a + (numerologyTable[c] || 0), 0);
+      return reduce(total);
+    }
+    function calcLifePath(dob) {
+      let digits = dob.replace(/-/g, '').split('').map(Number);
+      return reduce(digits.reduce((a, b) => a + b, 0));
+    }
+    function calcBirthday(dob) {
+      let day = Number(dob.split('-')[2]);
+      return reduce(day);
+    }
+    function calcAttitude(dob) {
+      let parts = dob.split('-');
+      let sum = Number(parts[1]) + Number(parts[2]);
+      return reduce(sum);
+    }
+    function calcMaturity(lifePath, expression) {
+      return reduce(lifePath + expression);
+    }
+    function getMeaning(num, type) {
+      const meanings = {
+        LifePath: {
+          1: "Born leader, independent, ambitious, courageous.",
+          2: "Diplomatic, peacemaker, cooperative, sensitive.",
+          3: "Creative, expressive, joyful, optimistic.",
+          4: "Practical, hard-working, disciplined, reliable.",
+          5: "Adventurous, freedom-loving, adaptable, energetic.",
+          6: "Responsible, caring, nurturing, family-oriented.",
+          7: "Spiritual, analytical, introspective, thoughtful.",
+          8: "Authoritative, goal-oriented, business-minded, powerful.",
+          9: "Compassionate, humanitarian, generous, wise.",
+          11: "Intuitive, inspirational, visionary, spiritual leader.",
+          22: "Master builder, large achievements, practical idealism.",
+          33: "Master teacher, universal love, deep compassion."
+        },
+        Expression: {
+          1: "Leadership, self-reliant, ambitious in career.",
+          2: "Partnership, tactful, harmony, support roles.",
+          3: "Creative, social, communicative, performer.",
+          4: "Organizer, methodical, dependable.",
+          5: "Versatile, adaptable, enjoys variety and change.",
+          6: "Caregiver, responsible, seeks harmony at home.",
+          7: "Seeker, philosophical, deep thinker.",
+          8: "Driven, managerial, material success.",
+          9: "Charitable, artistic, broad-minded.",
+          11: "Inspired, artistic, spiritual guidance.",
+          22: "Power to achieve great things, builder.",
+          33: "Service, spiritual nurturing, teacher."
+        },
+        SoulUrge: {
+          1: "Desires independence and achievement.",
+          2: "Craves peace, love, togetherness.",
+          3: "Wants joy, creativity, fun.",
+          4: "Needs order, stability, security.",
+          5: "Longs for freedom, excitement.",
+          6: "Wants to care for others, harmony.",
+          7: "Seeks truth, inner wisdom.",
+          8: "Desires authority, recognition.",
+          9: "Wants to serve, heal, help all.",
+          11: "Needs to inspire and enlighten.",
+          22: "Wants to accomplish big missions.",
+          33: "Desires to nurture and uplift all."
+        },
+        Personality: {
+          1: "Seen as bold, strong, self-reliant.",
+          2: "Gentle, diplomatic, friendly.",
+          3: "Expressive, fun, optimistic.",
+          4: "Serious, practical, trustworthy.",
+          5: "Adventurous, energetic, youthful.",
+          6: "Responsible, caring, wise.",
+          7: "Mysterious, thoughtful, calm.",
+          8: "Confident, business-like, assertive.",
+          9: "Kind, compassionate, giving.",
+          11: "Charismatic, magnetic, spiritual.",
+          22: "Powerful, visionary, grounded.",
+          33: "Radiates love, helpful, gentle."
+        },
+        Birthday: {
+          1: "Natural leader, takes initiative.",
+          2: "Sensitive, adaptable, peacemaker.",
+          3: "Creative, fun-loving, expressive.",
+          4: "Hard worker, stable, reliable.",
+          5: "Flexible, loves variety, traveler.",
+          6: "Caretaker, responsible, loving.",
+          7: "Analytical, spiritual, wise.",
+          8: "Ambitious, practical, powerful.",
+          9: "Humanitarian, compassionate, generous.",
+          11: "Inspirational, sensitive, intuitive.",
+          22: "Master builder, accomplishes much.",
+          33: "Master teacher, gives unconditional love."
+        },
+        Attitude: {
+          1: "Direct, confident, self-starter.",
+          2: "Friendly, supportive, patient.",
+          3: "Joyful, lively, talkative.",
+          4: "Dependable, cautious, organized.",
+          5: "Restless, curious, adventurous.",
+          6: "Caring, helpful, nurturing.",
+          7: "Private, deep, analytical.",
+          8: "Ambitious, determined, powerful.",
+          9: "Compassionate, tolerant, broad-minded.",
+          11: "Visionary, intuitive, uplifting.",
+          22: "Practical, resourceful, builds big things.",
+          33: "Caring, idealistic, inspiring."
+        },
+        Maturity: {
+          1: "Will develop confidence and leadership over life.",
+          2: "Cooperation and diplomacy become key in maturity.",
+          3: "Self-expression and joy will be more important.",
+          4: "Greater discipline and foundation-building ahead.",
+          5: "New adventures and change in second half.",
+          6: "Responsibility and nurturing become focus.",
+          7: "Deeper spiritual growth with age.",
+          8: "Business, power, achievement will manifest.",
+          9: "Wisdom, compassion, service define maturity.",
+          11: "Higher calling, spiritual insight emerges.",
+          22: "Major accomplishments in later life.",
+          33: "Role as healer, teacher, uplifter grows."
+        }
+      };
+      if (meanings[type] && meanings[type][num]) return meanings[type][num];
+      return "Special/unique influence!";
+    }
+    function getConclusion(lifePath, expression, soulUrge) {
+      return `
+        <div class="conclusion-title">GuruGanit's Conclusion</div>
+        <div class="conclusion-text">
+          Based on your <b>Life Path (${lifePath})</b>, <b>Expression (${expression})</b>, and <b>Soul Urge (${soulUrge})</b> numbers, you have a unique combination of qualities and energies.<br><br>
+          <b>Life Path</b> shows your true direction and core personality.<br>
+          <b>Expression</b> reveals your talents and how the world sees you.<br>
+          <b>Soul Urge</b> describes your innermost desires and what truly motivates you.<br><br>
+          <i>Remember, every number has strengths and challenges. Embrace your qualities, work on your weaknesses, and trust your inner guidance. Numerology is a map—your karma and free will shape your destiny!</i>
+          <br><br>
+          <span style="color:#ffe262;font-weight:600;">May your journey be full of wisdom, positivity, and success! – GuruGanit</span>
+        </div>
+      `;
+    }
+    function getLuckySection(lifePath) {
+      const d = luckyDetails[lifePath];
+      if (!d) return "";
+      return `
+        <div class="lucky-section">
+          <div class="lucky-title">Your Lucky Details</div>
+          <div class="lucky-list">
+            <b>Lucky Colour:</b> ${d.color}<br>
+            <b>Lucky Numbers:</b> ${d.number}<br>
+            <b>Lucky Field/Career:</b> ${d.field}<br>
+            <b>Lucky Day(s) to do special work:</b> ${d.day}<br>
+            <b>Best type of work:</b> ${d.work}<br>
+          </div>
+        </div>
+      `;
+    }
+    document.getElementById('numerologyForm').onsubmit = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('fullname').value.trim().toUpperCase();
+      const dob = document.getElementById('dob').value;
+      if(!name || !dob) return;
+      const lifePath = calcLifePath(dob);
+      const expression = getNumberFromName(name);
+      const soulUrge = getNumberFromName(name, "vowel");
+      const personality = getNumberFromName(name, "consonant");
+      const birthday = calcBirthday(dob);
+      const attitude = calcAttitude(dob);
+      const maturity = calcMaturity(lifePath, expression);
+
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.style.display = 'block';
+      resultsDiv.innerHTML = `
+        <div class="result-card">
+          <div class="result-title">Life Path Number</div>
+          <div class="result-number">${lifePath}</div>
+          <div>${getMeaning(lifePath,"LifePath")}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-title">Expression (Destiny) Number</div>
+          <div class="result-number">${expression}</div>
+          <div>${getMeaning(expression,"Expression")}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-title">Soul Urge (Heart's Desire) Number</div>
+          <div class="result-number">${soulUrge}</div>
+          <div>${getMeaning(soulUrge,"SoulUrge")}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-title">Personality Number</div>
+          <div class="result-number">${personality}</div>
+          <div>${getMeaning(personality,"Personality")}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-title">Birthday Number</div>
+          <div class="result-number">${birthday}</div>
+          <div>${getMeaning(birthday,"Birthday")}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-title">Attitude Number</div>
+          <div class="result-number">${attitude}</div>
+          <div>${getMeaning(attitude,"Att
