@@ -271,4 +271,19 @@
         <div class="result-card">
           <div class="result-title">Attitude Number</div>
           <div class="result-number">${attitude}</div>
-          <div>${getMeaning(attitude,"Att
+          <div>${getMeaning(attitude,"Attitude")}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-title">Maturity Number</div>
+          <div class="result-number">${maturity}</div>
+          <div>${getMeaning(maturity,"Maturity")}</div>
+        </div>
+        ${getLuckySection(lifePath)}
+        <div class="conclusion">
+          ${getConclusion(lifePath, expression, soulUrge)}
+        </div>
+      `;
+    };
+  </script>
+</body>
+</html>
